@@ -73,7 +73,9 @@ class FileUtilsPlugin(BasePlugin):
     # Test file commands
     result = mgr.handle_message("/pwd")
     assert len(result) == 1
-    assert "/" in result[0]  # Should be a path
+    import os
+    # Should be a path - check that it's an absolute path
+    assert os.path.isabs(result[0])  # Should be an absolute path
     
     # Test error handling
     result = mgr.handle_message("/hash")

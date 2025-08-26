@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.4 - UNRELEASED
+
+### Fixed
+- **Windows Compatibility**: Fixed path separator tests to work correctly on Windows by using `os.path.isabs()` instead of Unix-specific path checks
+
 ## 1.0.3 - 2025-08-26
 - Fix publishing to pypi
 
