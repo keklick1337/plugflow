@@ -2,7 +2,7 @@
 
 A powerful and flexible Python plugin system that enables dynamic loading, hot-reloading, and management of plugins in your applications. Build extensible software with ease!
 
-[![Python Version](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.9%2B-lime.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.10%2B-red.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.12%2B-green.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.13%2B-lime.svg)](https://python.org)
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.9%2B-lime.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.10%2B-red.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.12%2B-green.svg)](https://python.org) [![Python Version](https://img.shields.io/badge/python-3.13%2B-lime.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Features
