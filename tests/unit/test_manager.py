@@ -113,7 +113,8 @@ class TestPlugin(BasePlugin):
             return self.version
 """
     
-    plugin_writer(tmp_path, "test1", body1)
+    # Create the initial plugin file
+    plugin_file = plugin_writer(tmp_path, "test_plugin", body1)
     
     mgr = PluginManager([str(tmp_path)])
     mgr.load_all()
@@ -123,8 +124,11 @@ class TestPlugin(BasePlugin):
     result = mgr.handle_message("/version")
     assert "1.0.0" in result
     
-    # Load second plugin with same name
-    plugin_writer(tmp_path, "test2", body2)
+    # Overwrite the same file with new version
+    with open(plugin_file, 'w') as f:
+        f.write(body2)
+    
+    # Reload from the same path
     mgr.load_from_path(tmp_path)
     
     plugin = mgr.get("test")
