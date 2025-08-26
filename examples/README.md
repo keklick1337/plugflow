@@ -226,6 +226,46 @@ GET  /static/<file>     # Static file serving
 
 ---
 
+### 5. Flask Server (`flask_basic/`)
+
+**Purpose**: Demonstrates how to integrate PlugFlow with Flask to create modules using Blueprints.
+
+**Key Features**:
+- **Plugin-Based Routing**: Every plugin define its own routes making whole app modular
+- **Template System**: Plugin-extensible template rendering
+- **API Endpoints**: RESTful API endpoints via plugins
+- **Static File Handling**: Blueprints can have there own images, css, js and so on
+- **Development Server**: Hot reload for web development
+
+**Plugin Architecture**:
+- Route registration through plugin methods
+- Template and static file serving
+
+**Plugins Included**:
+- **`plugins/echo.py`**: echo Blueprint that dynamically attached to app
+
+**How to Run**:
+```bash
+cd flask_basic
+
+# Optional
+python3 -m venv venv
+source venv/bin/activate
+
+pip3 install flask plugflow
+python app.py                # Start server
+```
+
+**What You'll See**:
+- Web application with plugin-generated routes
+
+**Demonstrates**:
+- Web framework integration (Flask) with PlugFlow
+- Plugin-based routing
+- Plugin coordination in web context
+
+---
+
 ## Plugin Development Features
 
 **Demonstrated Across Examples**:
