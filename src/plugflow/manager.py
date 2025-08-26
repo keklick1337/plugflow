@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-import inspect
+from typing import Any, Dict, List, Optional, Union
+import sys
 
 from .base import BasePlugin
 from .loader import discover_and_load
@@ -93,6 +93,10 @@ class PluginManager:
                 old.plugin.on_unload(self)
             except Exception as e:
                 self.log.exception(f"Error on_unload({name}): {e}")
+            # Remove old module from sys.modules to ensure fresh reload
+            old_module_name = getattr(old.module, '__name__', None)
+            if old_module_name and old_module_name in sys.modules:
+                del sys.modules[old_module_name]
         self._records[name] = PluginRecord(plugin, path, module)
         try:
             plugin.on_load(self)

@@ -9,6 +9,7 @@
 ### Fixed
 - **Priority System**: Fixed plugin priority sorting to correctly execute higher priority plugins first
 - **Recursive Loading**: Fixed recursive plugin loading to properly discover plugins in subdirectories
+- **Plugin Replacement**: Fixed plugin replacement mechanism to properly unload old modules from `sys.modules` cache, ensuring clean reload when plugins with same name are loaded
 - **Documentation**: Fixed API documentation to match actual method names (`handle_message` vs `handle_command`, `get` vs `get_plugin`, etc.)
 - **Method Names**: Corrected README examples to use actual method signatures
 
