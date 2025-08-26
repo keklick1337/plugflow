@@ -20,9 +20,11 @@ def _iter_python_entries(plugins_dir: Path, recursive: bool = True) -> Iterable[
     """Searches for .py files and packages with __init__.py."""
     if recursive:
         for p in plugins_dir.rglob("*.py"):
-            # Consider .py files inside packages only as package root (__init__.py) or single module
-            if p.name == "__init__.py" or p.parent == plugins_dir:
-                yield p if p.name != "__init__.py" else p.parent
+            # For recursive mode, consider all .py files and packages
+            if p.name == "__init__.py":
+                yield p.parent  # yield the package directory
+            else:
+                yield p  # yield the .py file
     else:
         for p in plugins_dir.glob("*.py"):
             yield p

@@ -26,9 +26,11 @@ class DirectoryWatcher:
     def _iter_targets(self):
         if self.recursive:
             for p in self.root.rglob("*.py"):
-                # track only root modules: single .py and __init__.py packages
-                if p.name == "__init__.py" or p.parent == self.root:
-                    yield p if p.name != "__init__.py" else p.parent
+                # For recursive mode, consider all .py files and packages
+                if p.name == "__init__.py":
+                    yield p.parent  # yield the package directory
+                else:
+                    yield p  # yield the .py file
         else:
             for p in self.root.glob("*.py"):
                 yield p
@@ -40,6 +42,15 @@ class DirectoryWatcher:
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
+        
+        # Initial scan to populate _mtimes
+        for target in self._iter_targets():
+            try:
+                mtime = target.stat().st_mtime
+                self._mtimes[target] = mtime
+            except FileNotFoundError:
+                continue
+                
         self._thread = threading.Thread(target=self._run, daemon=True, name=f"DirectoryWatcher({self.root})")
         self._thread.start()
 

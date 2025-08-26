@@ -19,13 +19,13 @@ class PluginRecord:
 
 class PluginManager:
     def __init__(self,
-                 plugins_paths: List[Union[str, Path]],
+                 plugins_paths: Optional[List[Union[str, Path]]] = None,
                  context: Any = None,
                  recursive: bool = True,
                  hot_reload: bool = False,
                  poll_interval: float = 1.0,
                  logger: Optional[logging.Logger] = None) -> None:
-        self.paths = [Path(p) for p in plugins_paths]
+        self.paths = [Path(p) for p in (plugins_paths or [])]
         self.context = context
         self.recursive = recursive
         self.hot_reload = hot_reload
@@ -101,8 +101,11 @@ class PluginManager:
         self.log.debug(f"Plugin ready: {name} ({getattr(plugin, 'version', 'n/a')}) from {path}")
 
     def _on_fs_change(self, target: Path) -> None:
-        # On any change - try to load what's in the folder
+        # On any change - try to load what's in the folder, but only if it still exists
         self.log.debug(f"Change detected: {target}")
+        if not target.exists():
+            self.log.debug(f"Target no longer exists, skipping reload: {target}")
+            return
         try:
             self.load_from_path(target if target.is_dir() else target.parent)
         except Exception as e:
@@ -110,8 +113,10 @@ class PluginManager:
 
     def _on_fs_delete(self, target: Path) -> None:
         # Unload plugins whose path == target
+        self.log.debug(f"Delete detected: {target}")
         with self._lock:
             to_remove = [k for k, rec in self._records.items() if rec.path == target]
+            self.log.debug(f"Plugins to remove: {to_remove}")
             for k in to_remove:
                 rec = self._records.pop(k)
                 try:
@@ -130,11 +135,39 @@ class PluginManager:
             rec = self._records.get(name)
             return rec.plugin if rec else None
 
+    def unload_plugin(self, name: str) -> bool:
+        """Unload a plugin by name"""
+        with self._lock:
+            rec = self._records.pop(name, None)
+            if rec:
+                try:
+                    rec.plugin.on_unload(self)
+                except Exception as e:
+                    self.log.exception(f"Error on_unload({name}): {e}")
+                self.log.debug(f"Plugin unloaded: {name}")
+                return True
+            return False
+
+    def reload_plugin(self, name: str) -> bool:
+        """Reload a plugin by name (unload then reload from same path)"""
+        with self._lock:
+            rec = self._records.get(name)
+            if rec:
+                old_path = rec.path
+                self.unload_plugin(name)
+                try:
+                    self.load_from_path(old_path)
+                    return name in self._records
+                except Exception as e:
+                    self.log.exception(f"Error reloading plugin {name}: {e}")
+                    return False
+            return False
+
     # --- Dispatching ---
     def dispatch_event(self, event: str, data: Any = None) -> List[Any]:
         results: List[Any] = []
         with self._lock:
-            plugins = sorted(self._records.values(), key=lambda r: getattr(r.plugin, 'priority', 100))
+            plugins = sorted(self._records.values(), key=lambda r: getattr(r.plugin, 'priority', 100), reverse=True)
             for rec in plugins:
                 plg = rec.plugin
                 if hasattr(plg, "handles") and not plg.handles(event):
@@ -167,7 +200,7 @@ class PluginManager:
 
         # 1) Filters
         with self._lock:
-            plugins = sorted(self._records.values(), key=lambda r: getattr(r.plugin, 'priority', 100))
+            plugins = sorted(self._records.values(), key=lambda r: getattr(r.plugin, 'priority', 100), reverse=True)
             for rec in plugins:
                 plg = rec.plugin
                 if hasattr(plg, "filter_message") and callable(plg.filter_message):

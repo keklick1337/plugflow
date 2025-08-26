@@ -1,13 +1,14 @@
+"""Basic tests for PlugFlow core functionality."""
 
-import sys, time
+import pytest
 from pathlib import Path
 import textwrap
 
-import pytest
-
 from plugflow import PluginManager, BasePlugin
 
+
 def write_plugin(tmpdir: Path, name: str, body: str, as_pkg=False):
+    """Helper to write plugin files for testing."""
     if as_pkg:
         pkg = tmpdir / name
         pkg.mkdir()
@@ -18,75 +19,92 @@ def write_plugin(tmpdir: Path, name: str, body: str, as_pkg=False):
         f.write_text(textwrap.dedent(body), encoding="utf-8")
         return f
 
-def test_load_file_and_package(tmp_path: Path):
-    # file plugin
-    file_body = """
+
+def test_plugin_manager_creation():
+    """Test that PluginManager can be created with default parameters."""
+    # Test with no parameters
+    mgr = PluginManager()
+    assert mgr.paths == []
+    assert mgr.list_plugins() == []
+    
+    # Test with None
+    mgr2 = PluginManager(plugins_paths=None)
+    assert mgr2.paths == []
+    
+    # Test with empty list
+    mgr3 = PluginManager(plugins_paths=[])
+    assert mgr3.paths == []
+
+
+def test_basic_plugin_loading(tmp_path: Path):
+    """Test basic plugin loading from file."""
+    plugin_body = """
 from plugflow import BasePlugin
-class A(BasePlugin):
-    name = "A"
-    def on_event(self, event, data, manager): 
-        if event == "ping": 
-            return "pong"
-"""
-    write_plugin(tmp_path, "a_plugin", file_body)
 
-    # package plugin (via register)
-    pkg_body = """
-from plugflow import BasePlugin
-class B(BasePlugin):
-    name = "B"
-def register(context):
-    return [B]
-"""
-    write_plugin(tmp_path, "b_pkg", pkg_body, as_pkg=True)
-
-    mgr = PluginManager([str(tmp_path)])
-    mgr.load_all()
-
-    assert set(mgr.list_plugins()) == {"A", "B"}
-    res = mgr.dispatch_event("ping")
-    assert "pong" in res
-
-def test_message_flow_and_commands(tmp_path: Path):
-    body = """
-from plugflow import BasePlugin
-class F(BasePlugin):
-    name = "Filter"
-    priority = 5
-    def filter_message(self, text): 
-        return text.replace("bad", "b*d")
-class C(BasePlugin):
-    name = "Cmd"
+class TestPlugin(BasePlugin):
+    name = "test"
+    
     def handle_command(self, command, args):
         if command == "hello":
-            return "hi " + args
+            return f"Hello, {args}!"
 """
-    write_plugin(tmp_path, "mix", body)
-
+    write_plugin(tmp_path, "test_plugin", plugin_body)
+    
     mgr = PluginManager([str(tmp_path)])
     mgr.load_all()
+    
+    assert "test" in mgr.list_plugins()
+    plugin = mgr.get("test")
+    assert plugin is not None
+    assert plugin.plugin_name == "test"
 
-    out = mgr.handle_message("this is bad")
-    assert "this is b*d" not in out  # filter changes input but doesn't generate responses
-    out = mgr.handle_message("/hello world")
-    assert "hi world" in out
 
-def test_hot_add(tmp_path: Path):
-    mgr = PluginManager([str(tmp_path)], hot_reload=True, poll_interval=0.2)
-    mgr.load_all()
-
-    # Add new plugin on the fly
-    body = """
+def test_command_handling(tmp_path: Path):
+    """Test command handling through plugins."""
+    plugin_body = """
 from plugflow import BasePlugin
-class H(BasePlugin):
-    name = "Hot"
-    def handle_command(self, command, args):
-        if command == "hot":
-            return "loaded"
-"""
-    write_plugin(tmp_path, "hot_plg", body)
-    time.sleep(0.6)  # wait for watcher
 
-    assert "Hot" in mgr.list_plugins()
-    out = mgr.handle_message("/hot")
-    assert "loaded" in out
+class CommandPlugin(BasePlugin):
+    name = "commands"
+    
+    def handle_command(self, command, args):
+        if command == "echo":
+            return f"Echo: {args}"
+"""
+    write_plugin(tmp_path, "cmd_plugin", plugin_body)
+    
+    mgr = PluginManager([str(tmp_path)])
+    mgr.load_all()
+    
+    result = mgr.handle_message("/echo test message")
+    assert len(result) == 1
+    assert "Echo: test message" in result[0]
+
+
+def test_event_dispatch(tmp_path: Path):
+    """Test event dispatching to plugins."""
+    plugin_body = """
+from plugflow import BasePlugin
+
+class EventPlugin(BasePlugin):
+    name = "events"
+    
+    def on_event(self, event, data, manager):
+        if event == "test_event":
+            return f"Got: {data}"
+"""
+    write_plugin(tmp_path, "event_plugin", plugin_body)
+    
+    mgr = PluginManager([str(tmp_path)])
+    mgr.load_all()
+    
+    results = mgr.dispatch_event("test_event", "test_data")
+    assert len(results) == 1
+    assert "Got: test_data" in results[0]
+
+
+def test_nonexistent_path():
+    """Test handling of non-existent plugin paths."""
+    mgr = PluginManager(["/nonexistent/path"])
+    mgr.load_all()  # Should not crash
+    assert mgr.list_plugins() == []

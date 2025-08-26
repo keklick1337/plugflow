@@ -48,7 +48,7 @@ manager = PluginManager(plugins_paths=["plugins/"])
 manager.load_all()
 
 # Process a command through plugins
-result = manager.handle_command("hello", "world")
+result = manager.handle_message("/hello world")
 print(result)  # Output from plugin that handles "hello" command
 
 # Send events to plugins
@@ -126,25 +126,25 @@ The main class that manages plugin lifecycle and coordination:
 from plugflow import PluginManager
 
 manager = PluginManager(
-    auto_reload=True,    # Enable hot reload
+    hot_reload=True,    # Enable hot reload
     context={"app": my_app}  # Share context with plugins
 )
 
 # Load plugins
-manager.load_plugin("path/to/plugin.py")
+manager.load_from_path(Path("path/to/plugin.py"))
 manager.load_all()  # Load all plugins from configured paths
 
 # Manage plugins
-manager.reload_plugin("plugin_name")
 manager.unload_plugin("plugin_name")
+manager.reload_plugin("plugin_name")
 
 # Plugin communication
-result = manager.handle_command("command", "args")
+result = manager.handle_message("/command args")  # Handle chat-style messages
 manager.dispatch_event("event_name", data)
 
 # Get plugin information
 plugins = manager.list_plugins()
-plugin = manager.get_plugin("plugin_name")
+plugin = manager.get("plugin_name")
 ```
 
 ### BasePlugin
@@ -396,18 +396,21 @@ from my_plugin import MyPlugin
 
 class TestMyPlugin(unittest.TestCase):
     def setUp(self):
-        self.manager = PluginManager(plugins_paths=[])
+        self.manager = PluginManager()
+        # Manually add plugin for testing
+        from plugflow.manager import PluginRecord
         self.plugin = MyPlugin()
-        self.manager.register_plugin(self.plugin)
+        record = PluginRecord(self.plugin, Path("test"), None)
+        self.manager._records[self.plugin.name] = record
     
     def test_command_handling(self):
-        result = self.plugin.handle_command("status", "")
-        self.assertIn("Plugin my_plugin", result)
+        result = self.manager.handle_message("/status")
+        self.assertTrue(any("Plugin my_plugin" in r for r in result))
     
     def test_data_operations(self):
-        self.plugin.handle_command("set", "key=value")
-        result = self.plugin.handle_command("get", "key")
-        self.assertEqual(result, "value")
+        self.manager.handle_message("/set key=value")
+        result = self.manager.handle_message("/get key")
+        self.assertTrue(any("value" in r for r in result))
 ```
 
 ## API Reference
@@ -416,19 +419,20 @@ class TestMyPlugin(unittest.TestCase):
 
 #### Methods
 
-- `load_plugin(path: str) -> bool`: Load a plugin from file
-- `load_all() -> int`: Load all plugins from configured paths
+- `load_from_path(path: Path) -> None`: Load plugins from a file or directory
+- `load_all() -> None`: Load all plugins from configured paths
 - `unload_plugin(name: str) -> bool`: Unload a plugin by name
-- `reload_plugin(name: str) -> bool`: Reload a plugin
-- `handle_command(command: str, args: str) -> Optional[str]`: Process command through plugins
-- `dispatch_event(event: str, data: Any) -> None`: Send event to all plugins
+- `reload_plugin(name: str) -> bool`: Reload a plugin by name
+- `handle_message(text: str) -> List[str]`: Process message through plugins (supports /commands and filters)
+- `dispatch_event(event: str, data: Any = None) -> List[Any]`: Send event to all plugins
+- `broadcast(method: str, *args, **kwargs) -> List[Any]`: Call method on all plugins that have it
 - `list_plugins() -> List[str]`: Get list of loaded plugin names
 - `get(name: str) -> Optional[BasePlugin]`: Get plugin instance by name
-- `get_plugin(name: str) -> Optional[BasePlugin]`: Get plugin by name
+- `stop() -> None`: Stop hot reload watchers
 
 #### Properties
 
-- `auto_reload: bool`: Enable/disable hot reload
+- `hot_reload: bool`: Enable/disable hot reload
 - `context: Dict[str, Any]`: Shared context dictionary
 
 ### BasePlugin
@@ -468,7 +472,7 @@ class TestMyPlugin(unittest.TestCase):
 **Plugin Not Loading**
 ```python
 # Check plugin file syntax
-manager.load_plugin("plugin.py")  # Returns False if failed
+manager.load_from_path(Path("plugin.py"))
 
 # Enable debug logging
 import logging
@@ -484,8 +488,8 @@ sys.path.append("plugins")
 
 **Hot Reload Not Working**
 ```python
-# Ensure auto_reload is enabled
-manager = PluginManager(auto_reload=True)
+# Ensure hot_reload is enabled
+manager = PluginManager(hot_reload=True)
 
 # Check file permissions and watching capability
 ```
@@ -498,7 +502,7 @@ Enable verbose logging:
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-manager = PluginManager(auto_reload=True)
+manager = PluginManager(hot_reload=True)
 # Now you'll see detailed plugin loading information
 ```
 

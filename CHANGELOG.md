@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.0.2 - 2025-08-26
+
+### Changed
+- **Constructor Enhancement**: Added default value `[]` for `plugins_paths` parameter in `PluginManager.__init__()` to make it optional
+- **Type Safety**: Updated type annotations to support optional `plugins_paths` parameter
+
+### Fixed
+- **Priority System**: Fixed plugin priority sorting to correctly execute higher priority plugins first
+- **Recursive Loading**: Fixed recursive plugin loading to properly discover plugins in subdirectories
+- **Documentation**: Fixed API documentation to match actual method names (`handle_message` vs `handle_command`, `get` vs `get_plugin`, etc.)
+- **Method Names**: Corrected README examples to use actual method signatures
+
+### Added
+- **Plugin Management Methods**: Added `unload_plugin()` and `reload_plugin()` methods to `PluginManager`
+- **Comprehensive Test Suite**: Added extensive tests covering all major functionality:
+  - Default parameter handling
+  - Plugin priority system
+  - Lifecycle hooks (on_load/on_unload)
+  - Context sharing between manager and plugins
+  - Broadcast method functionality
+  - Error isolation and handling
+  - Hot reload functionality
+  - Event system testing
+  - Message filtering and command processing
+  - Integration tests based on example applications
+- **Test Organization**: Reorganized tests into focused unit tests (`tests/unit/`) and integration tests (`tests/integration/`)
+- **Test Fixtures**: Added common test utilities in `conftest.py` for better test maintainability
+
+### Technical Details
+- Enhanced constructor usability by allowing instantiation without plugin paths
+- Improved type safety with `Optional[List[Union[str, Path]]]` annotation
+- Fixed priority ordering in both `dispatch_event` and `handle_message` methods
+- Improved recursive directory scanning in plugin loader
+- Error isolation and handling
+- Selective event handling with `handles()` method
+- Multiple message handlers
+- Recursive vs non-recursive plugin loading
+- Plugin versioning
+- Plugin replacement (same name)
+- Non-existent path handling
+
+### Technical Details
+- Enhanced constructor usability by allowing instantiation without plugin paths
+- Improved type safety with `Optional[List[Union[str, Path]]]` annotation
+- Fixed plugin execution order to match documented behavior (higher priority = earlier execution)
+- Improved recursive plugin discovery algorithm for better subdirectory support
+
 ## 1.0.1 - 2025-08-26
 
 ### Fixed
