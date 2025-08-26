@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 class DirectoryWatcher:
     """Simple file polling for hot-reload without external dependencies.
@@ -12,15 +12,15 @@ class DirectoryWatcher:
     on_delete: callback(path: Path) called on plugin deletion.
     """
     def __init__(self, root: Path, interval: float = 1.0, recursive: bool = True,
-                 on_change: Callable[[Path], None] | None = None,
-                 on_delete: Callable[[Path], None] | None = None) -> None:
+                 on_change: Optional[Callable[[Path], None]] = None,
+                 on_delete: Optional[Callable[[Path], None]] = None) -> None:
         self.root = root
         self.interval = interval
         self.recursive = recursive
         self.on_change = on_change
         self.on_delete = on_delete
         self._stop = threading.Event()
-        self._thread: threading.Thread | None = None
+        self._thread: Optional[threading.Thread] = None
         self._mtimes: Dict[Path, float] = {}
 
     def _iter_targets(self):

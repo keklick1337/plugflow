@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 import inspect
 
 from .base import BasePlugin
@@ -19,7 +19,7 @@ class PluginRecord:
 
 class PluginManager:
     def __init__(self,
-                 plugins_paths: List[str | Path],
+                 plugins_paths: List[Union[str, Path]],
                  context: Any = None,
                  recursive: bool = True,
                  hot_reload: bool = False,

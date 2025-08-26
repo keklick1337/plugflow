@@ -41,11 +41,11 @@ pip install -e .
 ```python
 from plugflow import PluginManager
 
-# Create plugin manager
-manager = PluginManager()
+# Create plugin manager with plugins directory
+manager = PluginManager(plugins_paths=["plugins/"])
 
-# Load plugins from directory
-manager.load_plugins_from_directory("plugins/")
+# Load all plugins from configured paths
+manager.load_all()
 
 # Process a command through plugins
 result = manager.handle_command("hello", "world")
@@ -132,7 +132,7 @@ manager = PluginManager(
 
 # Load plugins
 manager.load_plugin("path/to/plugin.py")
-manager.load_plugins_from_directory("plugins/")
+manager.load_all()  # Load all plugins from configured paths
 
 # Manage plugins
 manager.reload_plugin("plugin_name")
@@ -189,8 +189,11 @@ class MyPlugin(BasePlugin):
 Enable automatic plugin reloading during development:
 
 ```python
-manager = PluginManager(auto_reload=True)
-manager.load_plugins_from_directory("plugins/")
+manager = PluginManager(
+    plugins_paths=["plugins/"],
+    hot_reload=True  # Enable hot reload for development
+)
+manager.load_all()
 
 # Now edit your plugins - changes will be detected automatically!
 ```
@@ -393,7 +396,7 @@ from my_plugin import MyPlugin
 
 class TestMyPlugin(unittest.TestCase):
     def setUp(self):
-        self.manager = PluginManager()
+        self.manager = PluginManager(plugins_paths=[])
         self.plugin = MyPlugin()
         self.manager.register_plugin(self.plugin)
     
@@ -414,12 +417,13 @@ class TestMyPlugin(unittest.TestCase):
 #### Methods
 
 - `load_plugin(path: str) -> bool`: Load a plugin from file
-- `load_plugins_from_directory(directory: str) -> int`: Load all plugins from directory
+- `load_all() -> int`: Load all plugins from configured paths
 - `unload_plugin(name: str) -> bool`: Unload a plugin by name
 - `reload_plugin(name: str) -> bool`: Reload a plugin
 - `handle_command(command: str, args: str) -> Optional[str]`: Process command through plugins
 - `dispatch_event(event: str, data: Any) -> None`: Send event to all plugins
-- `list_plugins() -> List[BasePlugin]`: Get list of loaded plugins
+- `list_plugins() -> List[str]`: Get list of loaded plugin names
+- `get(name: str) -> Optional[BasePlugin]`: Get plugin instance by name
 - `get_plugin(name: str) -> Optional[BasePlugin]`: Get plugin by name
 
 #### Properties
