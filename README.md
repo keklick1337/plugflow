@@ -320,11 +320,26 @@ python app.py
 
 ### 4. Web Server (`examples/web_server/`)
 
-Flask-based web application with plugin routes:
+Simple HTTP server with plugin routes:
 
 ```bash
 cd examples/web_server
 python server.py
+```
+
+### 5. Flask Server (`examples/flask_basic/`)
+
+Flask-based web application with plugin routes:
+
+```bash
+cd examples/flask_basic/
+
+# Optional
+python3 -m venv venv
+source venv/bin/activate
+
+pip3 install flask plugflow
+python app.py
 ```
 
 **Features**: Dynamic routing, middleware, API endpoints, template system
